@@ -52,10 +52,10 @@ from marzban_client.models.user_status import UserStatus
 from . import router
 
 PROXY_STATUS = {
-    UserStatus.ACTIVE: "فعال ✅",
-    UserStatus.DISABLED: "غیرفعال ❌",
-    UserStatus.LIMITED: "محدود شده 🔒",
-    UserStatus.EXPIRED: "منقضی شده ⏳",
+    UserStatus.ACTIVE: "Активен ✅",
+    UserStatus.DISABLED: "Отключён ❌",
+    UserStatus.LIMITED: "Ограничен 🔒",
+    UserStatus.EXPIRED: "Истёк ⏳",
 }
 
 
@@ -93,7 +93,7 @@ async def proxies(
 
     count = await q.count()
     if count < 1:
-        text = "در حال حاضر هیچ پروکسی فعالی ندارید😬"
+        text = "У вас пока нет активных подписок 😐😬"
         if isinstance(qmsg, CallbackQuery):
             return qmsg.answer(text, show_alert=True)
         return qmsg.answer(text)
@@ -106,7 +106,7 @@ async def proxies(
         next_page=True if count > 10 else False,
         prev_page=True if page > 0 else False,
     ).as_markup()
-    text = "🔵 لیست پروکسی‌های خریداری شده👇 (برای مدیریت هر پروکسی روی آن کلیک کنید)"
+    text = "🔵 Список ваших прокси 👇 (нажмите для управления)"
     try:
         if isinstance(qmsg, CallbackQuery):
             return await qmsg.message.edit_text(
@@ -118,7 +118,7 @@ async def proxies(
             reply_markup=reply_markup,
         )
     except exceptions.TelegramBadRequest as exc:
-        await qmsg.answer("❌ خطایی رخ داد!")
+        await qmsg.answer("❌ Произошла ошибка!")
         raise exc
 
 
@@ -140,7 +140,7 @@ async def show_proxy(
         if (state is not None) and (await state.get_state() is not None):
             data = await state.get_data()
             proxy_id, user_id, current_page = data.values()
-            text = "🌀 عملیات لغو شد!"
+            text = "🌀 Отменено!"
             await state.clear()
             if isinstance(qmsg, CallbackQuery):
                 await qmsg.answer(text)
@@ -154,12 +154,12 @@ async def show_proxy(
             )
         proxy = await Proxy.filter(id=proxy_id).first()
     if not proxy:
-        return await qmsg.answer("❌ اشتراک مورد نظر یافت نشد!")
+        return await qmsg.answer("❌ Подписка не найдена!")
 
     if user_id:
-        if (user.role < user.Role.admin) and (user.id != user_id):
+        if (not user.super_user) and (user.id != user_id):
             return
-        elif (user.role == user.Role.admin) and (proxy.user_id != user_id):
+        elif (user.super_user) and (proxy.user_id != user_id):
             await proxy.fetch_related("user")
             if proxy.user.parent_id != user.id:
                 return
@@ -170,31 +170,31 @@ async def show_proxy(
         )
     except Exception as err:
         await qmsg.answer(
-            f"❌ خطایی در دریافت اطلاعات سرویس رخ داد! لطفا کمی بعد دوباره تلاش کنید."
+            f"❌ Ошибка получения данных. Попробуйте позже."
         )
         raise err
     await proxy.fetch_related("service")
     if not sv_proxy:
         proxy.status = ProxyStatus.disabled
         await proxy.save()
-        if user.role < user.Role.admin:
+        if not user.super_user:
             return await qmsg.answer(
-                f"❌ پروکسی مورد نظر در سرور یافت نشد! لطفا با پشتیبانی تماس بگیرید.",
+                f"❌ Прокси не найден на сервере! Пожалуйста, свяжитесь с поддержкой.",
                 show_alert=True,
             )
         await proxy.refresh_from_db()
         await proxy.service.fetch_related("server")
         text = f"""
-❌ پروکسی در سرور یافت نشد!
+❌ Прокси не найден на сервере!
 
-آیدی: {proxy.id}
-نام تنظیم شده: {proxy.custom_name}
-شناسه: {proxy.username}
-هزینه: {proxy.cost:,}
+ID: {proxy.id}
+Имя: {proxy.custom_name}
+ID: {proxy.username}
+Стоимость: {proxy.cost:,}
 
-سرویس: {proxy.service.display_name}
+Сервис: {proxy.service.display_name}
         """
-        await proxy.fetch_related("reserve")
+        # await proxy.fetch_related("reserve")
         reply_markup = ProxyPanel(
             proxy,
             user_id=user_id,
@@ -214,28 +214,28 @@ async def show_proxy(
         await proxy.save()
         await proxy.refresh_from_db()
     text = f"""
-⭐️ شناسه: <code>{sv_proxy.username}</code> {f'({proxy.custom_name})' if proxy.custom_name else ''}
-🌀 وضعیت: <b>{PROXY_STATUS.get(sv_proxy.status)}</b>
-⏳ تاریخ انقضا: <b>{helpers.hr_date(sv_proxy.expire) if sv_proxy.expire else '♾'}</b> {f'<i>({helpers.hr_time(sv_proxy.expire - dt.now().timestamp(), lang="fa")})</i>' if sv_proxy.expire and sv_proxy.status != UserStatus.EXPIRED else ''}
-📊 حجم مصرف شده: <b>{helpers.hr_size(sv_proxy.used_traffic, lang='fa')}</b>
-{f'🔋 حجم باقی‌مانده: <b>{helpers.hr_size(sv_proxy.data_limit - sv_proxy.used_traffic ,lang="fa")}</b>' if sv_proxy.data_limit else ''}
+⭐️ ID: <code>{sv_proxy.username}</code> {f'({proxy.custom_name})' if proxy.custom_name else ''}
+🌀 Статус: <b>{PROXY_STATUS.get(sv_proxy.status)}</b>
+⏳ Истекает: <b>{helpers.hr_date(sv_proxy.expire) if sv_proxy.expire else '♾'}</b> {f'<i>({helpers.hr_time(sv_proxy.expire - dt.now().timestamp(), lang="ru")})</i>' if sv_proxy.expire and sv_proxy.status != UserStatus.EXPIRED else ''}
+📊 Использовано: <b>{helpers.hr_size(sv_proxy.used_traffic, lang='en')}</b>
+{f'🔋 Осталось: <b>{helpers.hr_size(sv_proxy.data_limit - sv_proxy.used_traffic ,lang="ru")}</b>' if sv_proxy.data_limit else ''}
 
-🔑 پروکسی های فعال: {', '.join([f'<b>{t.upper()}</b>' for t in [protocol for protocol in sv_proxy.inbounds.additional_properties]])}
+🔑 Активные прокси: {', '.join([f'<b>{t.upper()}</b>' for t in [protocol for protocol in sv_proxy.inbounds.additional_properties]])}
 
-🔗 لینک اتصال هوشمند: 
+🔗 Ссылка подключения: 
 <code>{sv_proxy.subscription_url}</code>
 
-❕برای اطلاع یافتن از وضعیت پروکسی بدون وارد شدن به ربات، میتونید لینک اتصال هوشمند رو ذخیره کنید و در مروگر باز کنید، یا اینکه روی لینک زیر کلیک کنید:
-<a href='{sv_proxy.subscription_url}'>🔺 اتصال هوشمند</a>
+❕ Сохраните ссылку для проверки статуса без бота, или нажмите:
+<a href='{sv_proxy.subscription_url}'>🔺 Подключение</a>
 
-💡 برای دریافت راهنمای اتصال و استفاده دستور /help را ارسال کنید!
+💡 Для инструкции отправьте /help
 """
     if sv_proxy.status == UserStatus.ACTIVE:
         text += """
 
-💡 برای قطع اتصال افراد متصل می‌توانید از دکمه «تغییر پسوورد» استفاده کنید!
+💡 Для отключения пользователей нажмите «Сменить пароль»
 
-💡 برای دریافت لینک‌های اتصال و Qr Code میتوانید از دکمه زیر استفاده کنید👇
+💡 Для получения ссылок и QR-кода нажмите кнопку ниже 👇
 """
     reply_markup = ProxyPanel(
         proxy,
@@ -258,7 +258,7 @@ async def remove_proxy(
 ):
     if not callback_data.confirmed:
         return await query.message.edit_text(
-            "⚠️ مطمئن هستید که میخواهید سرویس مورد نظر را از لیست پروکسی‌های خود حذف کنید؟ پس از حذف امکان تمدید وجود نخواهد داشت!",
+            "⚠️ Вы уверены, что хотите удалить подписку? Восстановление невозможно!",
             reply_markup=ConfirmProxyPanel(
                 action=ProxyPanelActions.remove,
                 proxy_id=callback_data.proxy_id,
@@ -269,9 +269,9 @@ async def remove_proxy(
 
     user_id = callback_data.user_id if callback_data.user_id else user.id
     proxy = await Proxy.filter(id=callback_data.proxy_id).first()
-    if (user.role < user.Role.admin) and (user.id != user_id):
+    if (not user.super_user) and (user.id != user_id):
         return
-    elif (user.role == user.Role.admin) and (proxy.user_id != user_id):
+    elif (user.super_user) and (proxy.user_id != user_id):
         await proxy.fetch_related("user")
         if proxy.user.parent_id != user.id:
             return
@@ -283,7 +283,7 @@ async def remove_proxy(
         )
     except Exception as err:
         await query.answer(
-            f"❌ خطایی در دریافت اطلاعات سرویس رخ داد! لطفا کمی بعد دوباره تلاش کنید."
+            f"❌ Ошибка получения данных. Попробуйте позже."
         )
         raise err
 
@@ -294,7 +294,7 @@ async def remove_proxy(
             )
         await proxy.delete()
 
-        await query.answer("✅ اشتراک از لیست پروکسی‌های شما حذف شد", show_alert=True)
+        await query.answer("✅ Подписка удалена", show_alert=True)
         await proxies(
             query,
             user,
@@ -306,7 +306,7 @@ async def remove_proxy(
         )
     except Exception:
         await query.answer(
-            "❌ خطایی در انجام عملیات رخ داد! لطفا با پشتیبانی تماس بگیرید."
+            "❌ Произошла ошибка при выполнении операции! Пожалуйста, свяжитесь с поддержкой."
         )
 
 
@@ -319,11 +319,11 @@ async def reset_password(
     text = """
 💡 در این بخش می‌توانید  دسترسی افراد متصل را قطع کنید!
 
-برای انجام این کار دو روش دارید:
-1️⃣ تغییر پسوورد: فقط پسوورد کانفیگ‌ها عوض شده و کاربر با استفاده از لینک اتصال هوشمند می‌تواند دوباره متصل شود.
-2️⃣ تغییر اتصال هوشمند: لینک اتصال هوشمند کاربر را تغییر می‌دهد و کاربر توانایی آپدیت و استفاده از لینک اتصال هوشمند قدیمی را نخواهد داشت.
+Два способа:
+1️⃣ Сменить пароль: меняет только пароль, пользователь может переподключиться по ссылке
+2️⃣ Сменить ссылку: меняет ссылку подключения, старая перестанет работать
 
-اگه میخواید دسترسی کاربر رو به صورت کامل قطع کنید، باید از هر دو روش استفاده کنید🫡
+Для полного отключения используйте оба способа 🫡
 """
     await query.message.edit_text(
         text,
@@ -343,7 +343,7 @@ async def reset_uuid(
 ):
     if not callback_data.confirmed:
         return await query.message.edit_text(
-            "⚠️ مطمئن هستید که میخواهید پسوورد سرویس مورد نظر تغییر کند؟ تمام افراد متصل قطع خواهند شد!",
+            "⚠️ Все подключённые пользователи будут отключены! Продолжить?",
             reply_markup=ConfirmProxyPanel(
                 action=ProxyPanelActions.reset_uuid,
                 proxy_id=callback_data.proxy_id,
@@ -354,9 +354,9 @@ async def reset_uuid(
 
     user_id = callback_data.user_id if callback_data.user_id else user.id
     proxy = await Proxy.filter(id=callback_data.proxy_id).first()
-    if (user.role < user.Role.admin) and (user.id != user_id):
+    if (not user.super_user) and (user.id != user_id):
         return
-    elif (user.role == user.Role.admin) and (proxy.user_id != user_id):
+    elif (user.super_user) and (proxy.user_id != user_id):
         await proxy.fetch_related("user")
         if proxy.user.parent_id != user.id:
             return
@@ -368,7 +368,7 @@ async def reset_uuid(
         )
     except Exception as err:
         await query.answer(
-            f"❌ خطایی در دریافت اطلاعات سرویس رخ داد! لطفا کمی بعد دوباره تلاش کنید."
+            f"❌ Ошибка получения данных. Попробуйте позже."
         )
         raise err
     try:
@@ -386,7 +386,7 @@ async def reset_uuid(
             ),
         )
 
-        await query.answer("✅ پسوورد پروکسی تغییر یافت", show_alert=True)
+        await query.answer("✅ Пароль изменён", show_alert=True)
 
         await show_proxy(
             query,
@@ -400,7 +400,7 @@ async def reset_uuid(
         )
     except Exception:
         await query.answer(
-            "❌ خطایی در انجام عملیات رخ داد! لطفا با پشتیبانی تماس بگیرید."
+            "❌ Произошла ошибка при выполнении операции! Пожалуйста, свяжитесь с поддержкой."
         )
 
 
@@ -412,7 +412,7 @@ async def reset_subscription(
 ):
     if not callback_data.confirmed:
         return await query.message.edit_text(
-            "⚠️ مطمئن هستید که میخواهید لینک اتصال هوشمند سرویس مورد نظر تغییر کند؟ امکان استفاده از لینک اتصال هوشمند قدیمی وجود نخواهد داشت!",
+            "⚠️ Старая ссылка подключения перестанет работать! Продолжить?",
             reply_markup=ConfirmProxyPanel(
                 action=ProxyPanelActions.reset_subscription,
                 proxy_id=callback_data.proxy_id,
@@ -423,9 +423,9 @@ async def reset_subscription(
 
     user_id = callback_data.user_id if callback_data.user_id else user.id
     proxy = await Proxy.filter(id=callback_data.proxy_id).first()
-    if (user.role < user.Role.admin) and (user.id != user_id):
+    if (not user.super_user) and (user.id != user_id):
         return
-    elif (user.role == user.Role.admin) and (proxy.user_id != user_id):
+    elif (user.super_user) and (proxy.user_id != user_id):
         await proxy.fetch_related("user")
         if proxy.user.parent_id != user.id:
             return
@@ -437,7 +437,7 @@ async def reset_subscription(
         )
     except Exception as err:
         await query.answer(
-            f"❌ خطایی در دریافت اطلاعات سرویس رخ داد! لطفا کمی بعد دوباره تلاش کنید."
+            f"❌ Ошибка получения данных. Попробуйте позже."
         )
         raise err
     try:
@@ -446,7 +446,7 @@ async def reset_subscription(
             client=client,
         )
 
-        await query.answer("✅ لینک اتصال هوشمند تغییر یافت", show_alert=True)
+        await query.answer("✅ Ссылка подключения изменена", show_alert=True)
 
         await show_proxy(
             query,
@@ -460,7 +460,7 @@ async def reset_subscription(
         )
     except Exception:
         await query.answer(
-            "❌ خطایی در انجام عملیات رخ داد! لطفا با پشتیبانی تماس بگیرید."
+            "❌ Произошла ошибка при выполнении операции! Пожалуйста, свяжитесь с поддержкой."
         )
 
 
@@ -470,9 +470,9 @@ async def proxy_links(
 ):
     user_id = callback_data.user_id if callback_data.user_id else user.id
     proxy = await Proxy.filter(id=callback_data.proxy_id).first()
-    if (user.role < user.Role.admin) and (user.id != user_id):
+    if (not user.super_user) and (user.id != user_id):
         return
-    elif (user.role == user.Role.admin) and (proxy.user_id != user_id):
+    elif (user.super_user) and (proxy.user_id != user_id):
         await proxy.fetch_related("user")
         if proxy.user.parent_id != user.id:
             return
@@ -484,27 +484,27 @@ async def proxy_links(
         )
     except Exception as err:
         await query.answer(
-            "❌ خطایی در انجام عملیات رخ داد! لطفا با پشتیبانی تماس بگیرید.",
+            "❌ Произошла ошибка при выполнении операции! Пожалуйста, свяжитесь с поддержкой.",
             show_alert=True,
         )
         raise err
     if not sv_proxy:
         return await query.answer(
-            "❌ خطایی در دریافت اطلاعات سرویس رخ داد! لطفا کمی بعد دوباره تلاش کنید.",
+            "❌ Ошибка получения данных. Попробуйте позже.",
             show_alert=True,
         )
     links = "\n\n".join([f"<code>{link}</code>" for link in sv_proxy.links])
     text = f"""
-🔑 پروکسی های فعال: {', '.join(f'<b>{protocol.upper()}</b>' for protocol in sv_proxy.inbounds.additional_properties)}:
-    🔗 لینک‌های اتصال:
+🔑 Активные прокси: {', '.join(f'<b>{protocol.upper()}</b>' for protocol in sv_proxy.inbounds.additional_properties)}:
+    🔗 Ссылки подключения:
     
 {links}
 
-💡 برای کپی کردن هرکدام از لینک‌ها روی آن کلیک کنید👆
+💡 Нажмите на ссылку чтобы скопировать 👆
 
-💡 برای دریافت راهنمای اتصال و استفاده دستور /help را ارسال کنید!
+💡 Для инструкции отправьте /help
 
-📷 برای دریافت <b>Qr code</b> از دکمه‌های زیر استفاده کنید👇
+📷 Для получения QR-кода нажмите кнопку ниже 👇
     """
     await query.message.edit_text(
         text,
@@ -549,7 +549,7 @@ async def generate_sub_qr_code(message: Message, link: str, username: str):
     f.seek(0)
     await message.answer_photo(
         photo=BufferedInputFile(f.getvalue(), filename=f"generated_qr_code_{username}"),
-        caption=f"⛓ لینک Qr code اتصال هوشمند ({username})",
+        caption=f"⛓️ Ссылка и QR-код подключения ({username})",
     )
 
 
@@ -561,9 +561,9 @@ async def generate_qrcode_all(
 ):
     user_id = callback_data.user_id if callback_data.user_id else user.id
     proxy = await Proxy.filter(id=callback_data.proxy_id).first()
-    if (user.role < user.Role.admin) and (user.id != user_id):
+    if (not user.super_user) and (user.id != user_id):
         return
-    elif (user.role == user.Role.admin) and (proxy.user_id != user_id):
+    elif (user.super_user) and (proxy.user_id != user_id):
         await proxy.fetch_related("user")
         if proxy.user.parent_id != user.id:
             return
@@ -575,17 +575,17 @@ async def generate_qrcode_all(
         )
     except Exception as err:
         await query.answer(
-            "❌ خطایی در انجام عملیات رخ داد! لطفا با پشتیبانی تماس بگیرید.",
+            "❌ Произошла ошибка при выполнении операции! Пожалуйста, свяжитесь с поддержкой.",
             show_alert=True,
         )
         raise err
     if not sv_proxy:
         return await query.answer(
-            "❌ خطایی در دریافت اطلاعات سرویس رخ داد! لطفا کمی بعد دوباره تلاش کنید.",
+            "❌ Ошибка получения данных. Попробуйте позже.",
             show_alert=True,
         )
 
-    await query.answer("♻️ درحال ساخت و ارسال Qr code. چند لحظه منتظر بمانید...")
+    await query.answer("♻️ Генерирую QR-код, подождите...")
 
     await generate_qr_code(query.message, sv_proxy.links, username=proxy.username)
 
@@ -598,9 +598,9 @@ async def generate_qrcode_sub(
 ):
     user_id = callback_data.user_id if callback_data.user_id else user.id
     proxy = await Proxy.filter(id=callback_data.proxy_id).first()
-    if (user.role < user.Role.admin) and (user.id != user_id):
+    if (not user.super_user) and (user.id != user_id):
         return
-    elif (user.role == user.Role.admin) and (proxy.user_id != user_id):
+    elif (user.super_user) and (proxy.user_id != user_id):
         await proxy.fetch_related("user")
         if proxy.user.parent_id != user.id:
             return
@@ -612,17 +612,17 @@ async def generate_qrcode_sub(
         )
     except Exception as err:
         await query.answer(
-            "❌ خطایی در انجام عملیات رخ داد! لطفا با پشتیبانی تماس بگیرید.",
+            "❌ Произошла ошибка при выполнении операции! Пожалуйста, свяжитесь с поддержкой.",
             show_alert=True,
         )
         raise err
     if not sv_proxy:
         return await query.answer(
-            "❌ خطایی در دریافت اطلاعات سرویس رخ داد! لطفا کمی بعد دوباره تلاش کنید.",
+            "❌ Ошибка получения данных. Попробуйте позже.",
             show_alert=True,
         )
 
-    await query.answer("♻️ درحال ساخت و ارسال Qr code. چند لحظه منتظر بمانید...")
+    await query.answer("♻️ Генерирую QR-код, подождите...")
     await generate_sub_qr_code(
         query.message, sv_proxy.subscription_url, username=proxy.username
     )
@@ -634,9 +634,9 @@ async def renew_proxy(
 ):
     user_id = callback_data.user_id if callback_data.user_id else user.id
     proxy = await Proxy.filter(id=callback_data.proxy_id).first()
-    if (user.role < user.Role.admin) and (user.id != user_id):
+    if (not user.super_user) and (user.id != user_id):
         return
-    elif (user.role == user.Role.admin) and (proxy.user_id != user_id):
+    elif (user.super_user) and (proxy.user_id != user_id):
         await proxy.fetch_related("user")
         if proxy.user.parent_id != user.id:
             return
@@ -648,23 +648,23 @@ async def renew_proxy(
         server__is_enabled=True,
         is_test_service=False,
     )
-    if user.role == User.Role.reseller:
-        q = q.filter(users_only=False)
-    elif user.role == User.Role.user:
-        q = q.filter(resellers_only=False)
+    if False:
+            pass
+    elif True:
+            pass
 
     available_services = await q.all()
     if not available_services:
         text = """
-❗️برای اشتراک مورد نظر امکان تمدید وجود ندارد!
-لطفا با پشتیبانی تماس بگیرید.
+❗️ Продление недоступно для этой подписки
+Пожалуйста, свяжитесь с поддержкой.
     """
         return await query.answer(text, show_alert=True)
 
     text = """
-♻️ از این بخش میتونید اشتراک خریداری‌شده خودتون رو تمدید کنید!
+♻️ Здесь можно продлить подписку!
 
-برای تمدید اشتراک میتونید یکی از سرویس‌های زیر رو انتخاب کنید:
+Для продления выберите тариф 👇:
     """
     await query.message.edit_text(
         text,
@@ -683,21 +683,21 @@ async def renew_proxy_service(
 ):
     user_id = callback_data.user_id if callback_data.user_id else user.id
     proxy = await Proxy.filter(id=callback_data.proxy_id).first()
-    if (user.role < user.Role.admin) and (user.id != user_id):
+    if (not user.super_user) and (user.id != user_id):
         return
-    elif (user.role == user.Role.admin) and (proxy.user_id != user_id):
+    elif (user.super_user) and (proxy.user_id != user_id):
         await proxy.fetch_related("user")
         if proxy.user.parent_id != user.id:
             return
 
     text = """
-✅ برای تمدید میتونید یکی از حالت‌های زیر رو انتخاب کنید👇
+✅ Выберите способ продления 👇👇
 
-➖ تمدید آنی: دوره جدید اشتراک شما از همین لحظه محاسبه می‌شود و سرویس جدید برای شما فعال می‌شود.
+➖ Мгновенное: новый период начинается сейчас
 
-➖ رزور پلن پشتیبان: پس از اتمام حجم یا دوره اشتراک فعلی، سرویس جدید به طور خودکار فعال می‌شود.
+➖ Резерв: активируется после окончания текущего
 
-یکی از حالت‌های تمدید رو انتخاب کنید👇
+Выберите способ продления 👇👇
     """
     await query.message.edit_text(
         text,
@@ -716,9 +716,9 @@ async def renew_proxy_now(
 ):
     user_id = callback_data.user_id if callback_data.user_id else user.id
     proxy = await Proxy.filter(id=callback_data.proxy_id).first()
-    if (user.role < user.Role.admin) and (user.id != user_id):
+    if (not user.super_user) and (user.id != user_id):
         return
-    elif (user.role == user.Role.admin) and (proxy.user_id != user_id):
+    elif (user.super_user) and (proxy.user_id != user_id):
         await proxy.fetch_related("user")
         if proxy.user.parent_id != user.id:
             return
@@ -731,30 +731,31 @@ async def renew_proxy_now(
     ).first()
     if not service:
         return await query.answer(
-            "❌ خطایی در انجام عملیات رخ داد! لطفا با پشتیبانی تماس بگیرید.",
+            "❌ Произошла ошибка при выполнении операции! Пожалуйста, свяжитесь с поддержкой.",
             show_alert=True,
         )
 
     price = service.get_price()
-    await user.fetch_related("setting")
-    if user.setting and (discount_percentage := user.setting.discount_percentage):
-        discounted_price = service.get_price(discount_percent=discount_percentage)
-    else:
-        discounted_price = price
+        #         price = price
+        #     await user.fetch_related("setting")
+        #     if user.setting and (discount_percentage := user.setting.discount_percentage):
+        #         price = service.get_price(discount_percent=discount_percentage)
+        #     else:
+        #         price = price
 
-    balance = await user.get_available_credit()
+    balance = await user.get_balance()
 
     if callback_data.confirmed:
-        if balance < discounted_price:
+        if balance < price:
             return await query.answer(
-                "❌ موجودی حساب شما کافی نمی‌باشد!", show_alert=True
+                "❌ Недостаточно средств!", show_alert=True
             )
         try:
             async with in_transaction():
                 await Invoice.create(
-                    amount=discounted_price,
-                    type=Invoice.Type.renew_now,
-                    is_paid=not user.is_postpaid,
+                    amount=price,
+                    type=Invoice.Type.renew,
+                    is_paid=True,
                     proxy=proxy,
                     user=user,
                 )
@@ -797,7 +798,7 @@ async def renew_proxy_now(
                 await proxy.save()
                 if not sv_proxy:
                     raise ApiUserError("modify user didn't return anything!")
-                await query.answer("✅ سرویس شما با موفقیت تمدید شد!", show_alert=True)
+                await query.answer("✅ Подписка успешно продлена!", show_alert=True)
                 return await show_proxy(
                     query,
                     user,
@@ -810,33 +811,33 @@ async def renew_proxy_now(
                 )
         except Exception as err:
             await query.answer(
-                "❌ خطایی در انجام عملیات رخ داد! لطفا با پشتیبانی تماس بگیرید.",
+                "❌ Произошла ошибка при выполнении операции! Пожалуйста, свяжитесь с поддержкой.",
                 show_alert=True,
             )
             raise err
 
     text = f"""
-🌀 آیا مایل به فعال سازی سرویس زیر برای این پروکسی هستید؟
+🌀 Активировать тариф для этого прокси?
 
 💎 {service.name}
-🕐 مدت زمان: {helpers.hr_time(service.expire_duration, lang="fa") if service.expire_duration else '♾'}
-🖥 حجم: {helpers.hr_size(service.data_limit, lang="fa") if service.data_limit else '♾'}
-💰 قیمت: {price:,} تومان
+🕐 Длительность: {helpers.hr_time(service.expire_duration, lang="ru") if service.expire_duration else '♾'}
+🖥 Трафик: {helpers.hr_size(service.data_limit, lang="ru") if service.data_limit else '♾'}
+💰 قیمت: {price:,} руб.
 """
-    if discounted_price < price:
+    if price < price:
         text += f"""
 ~~~~~~~~~~~~~~~~~~~~~~~~
-🔥 تخفیف ویژه شما: <code>{discount_percentage}</code> درصد
-💰 قیمت با تخفیف: <code>{discounted_price:,}</code> تومان
+🔥 Ваша скидка: <code>{discount_percentage}</code>%
+💰 Со скидкой: <code>{price:,}</code> руб.
 ~~~~~~~~~~~~~~~~~~~~~~~~
 """
     text += f"""
-🏦 موجودی حساب شما: {balance:,} تومان
-💵 مبلغ قابل پرداخت: {discounted_price:,} تومان
+🏦 Ваш баланс: {balance:,} руб.
+💵 К оплате: {price:,} руб.
 ~~~~~~~~~~~~~~~~~~~~~~~~
     """
-    if balance >= discounted_price:
-        text += "🛍 برای تمدید آنی و فعالسازی سرویس، دکمه زیر را کلیک کنید👇"
+    if balance >= price:
+        text += "🛍 Для активации нажмите кнопку 👇"
         return await query.message.edit_text(
             text,
             reply_markup=ConfirmRenew(
@@ -847,7 +848,7 @@ async def renew_proxy_now(
                 current_page=callback_data.current_page,
             ).as_markup(),
         )
-    text += "😞 موجودی حساب شما برای فعالسازی این سرویس کافی نیست! برای افزایش اعتبار دکمه زیر را کلیک کنید👇"
+    text += "😞 Недостаточно средств! Пополните баланс 👇"
     return await query.message.edit_text(
         text,
         reply_markup=ConfirmRenew(

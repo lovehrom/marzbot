@@ -22,13 +22,29 @@ class UserCreateInbounds:
         return field_dict
 
     @classmethod
-    def from_dict(cls: Type[T], src_dict: Dict[str, Any]) -> T:
-        d = src_dict.copy()
-        user_create_inbounds = cls()
+    def from_dict(cls: Type[T], src_dict: Any) -> T:
+        # ПРОВЕРКА: если данных нет
+        if src_dict is None:
+            return cls()
 
+        # ПРОВЕРКА: если пришел список (например, ["vless"])
+        if isinstance(src_dict, list):
+            d = {item: [] for item in src_dict}
+        # ПРОВЕРКА: если пришел словарь
+        elif isinstance(src_dict, dict):
+            d = src_dict.copy()
+        else:
+            d = {}
+
+        user_create_inbounds = cls()
         additional_properties = {}
+
         for prop_name, prop_dict in d.items():
-            additional_property = cast(List[str], prop_dict)
+            # Защита: если внутри элемента списка не список строк
+            if isinstance(prop_dict, list):
+                additional_property = cast(List[str], prop_dict)
+            else:
+                additional_property = []
 
             additional_properties[prop_name] = additional_property
 

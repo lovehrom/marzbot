@@ -59,7 +59,7 @@ async def msg_command(message: Message, user: User):
 
     try:
         msg_text = f"""
-🔔 شما یک پیام از طرف پشتیبانی دارید:
+🔔 🔔 У вас новое сообщение от поддержки:
 ~~~~~~~~~~~~~~~~~~~~~~~~
 {text}
 ‌‌
@@ -104,7 +104,7 @@ async def send_msg(message: Message, user: User):
 
 async def broadcast(message: Message, sender: callable, type: str):
     if not message.reply_to_message:
-        return await message.reply(f"برای {type} باید روی یک پیام ریپلای کنید!")
+        return await message.reply(f"Для {type} нужно ответить на сообщение!")
 
     success = 0
     fails = 0
@@ -114,7 +114,7 @@ async def broadcast(message: Message, sender: callable, type: str):
     total = len(users)
 
     progres = await message.reply(
-        f"{type} پیام به {total} کاربر...\n" f"زمان تقریبی: {int((waiter*total)/60)}"
+        f"{type} сообщение {total} пользователям...\n" f"Примерное время: {int((waiter*total)/60)}"
     )
 
     for idx, user in enumerate(users):
@@ -124,11 +124,11 @@ async def broadcast(message: Message, sender: callable, type: str):
             fails += 1
         if idx and (idx % 250) == 0:
             await progres.edit_text(
-                f"{type} پیام به {total} کاربر...\n" f"پیشرفت: {int(idx/total*100)}%"
+                f"{type} сообщение {total} пользователям...\n" f"Прогресс: {int(idx/total*100)}%"
             )
         await asyncio.sleep(0.1)
-    await progres.edit_text(f"{type} پیام به {total} کاربر...\n" f"پیشرفت: 100%")
-    return await message.reply(f"پیام {type} شد!\nموفق: {success}\n ناموفق: {fails}")
+    await progres.edit_text(f"{type} сообщение {total} пользователям...\n" f"Прогресс: 100%")
+    return await message.reply(f"Сообщение {type}!\nУспешно: {success}\n Неудачно: {fails}")
 
 
 @router.message(Command("forward"), SuperUserAccess())
@@ -138,7 +138,7 @@ async def forward_command(message: Message, user: User):
     Example:
         /forward (reply)
     """
-    asyncio.create_task(broadcast(message, fwd_msg, "فوروارد"))
+    asyncio.create_task(broadcast(message, fwd_msg, "Переслать"))
 
 
 @router.message(Command("broadcast"), SuperUserAccess())
@@ -148,4 +148,4 @@ async def broadcast_command(message: Message, user: User):
     Example:
         /broadcast (reply)
     """
-    asyncio.create_task(broadcast(message, send_msg, "ارسال"))
+    asyncio.create_task(broadcast(message, send_msg, "Отправить"))

@@ -26,8 +26,9 @@ async def main_menu_handler(
     if (state is not None) and (await state.get_state() is not None):
         await state.clear()
     text = """
-♻️ منوی اصلی ربات:
-🤖 چه کاری میتونم براتون انجام بدم؟👇
+🏠 Главное меню 
+
+Чем я могу вам помочь? 👇؟👇
     """
     if isinstance(qmsg, CallbackQuery):
         return await qmsg.message.answer(

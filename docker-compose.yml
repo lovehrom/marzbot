@@ -1,20 +1,18 @@
-version: '3'
-
 services:
   bot:
-    image: ghcr.io/govfvck/marzbot:latest
+    build: .
+    container_name: marzbot_app
     restart: on-failure
-    ports:
-      - "127.0.0.1:3333:3333"
+    # Убрали network_mode: host, теперь бот в одной сети с БД и Redis
     env_file:
       - .env
-
     depends_on:
       - mariadb
       - redis
 
   redis:
     image: redis:alpine
+    container_name: marzbot_redis
     restart: always
     volumes:
       - "/var/lib/marzbot/docker-volumes/redis:/data"
@@ -22,19 +20,21 @@ services:
 
   mariadb:
     image: "mariadb:latest"
+    container_name: marzbot_db
     restart: always
     volumes:
-      - /var/lib/marzbot/docker-volumes/mariadb:/var/lib/mysql
+      - "/var/lib/marzbot/docker-volumes/mariadb:/var/lib/mysql"
     environment:
-      MYSQL_ROOT_PASSWORD: 1234ggg
-      MYSQL_DATABASE: marzbot
-      MYSQL_USER: marzbot
-      MYSQL_PASSWORD: 1234ggg
+      MYSQL_ROOT_PASSWORD: "1234ggg"
+      MYSQL_DATABASE: "marzbot"
+      MYSQL_USER: "marzbot"
+      MYSQL_PASSWORD: "1234ggg"
 
   phpmyadmin:
     image: phpmyadmin
+    container_name: marzbot_pma
     restart: always
     ports:
-      - "127.0.0.1:8010:80"
+      - "8010:80"
     environment:
       - PMA_HOST=mariadb

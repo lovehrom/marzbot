@@ -9,10 +9,10 @@ from app.utils.filters import IsJoinedToChannel
 from . import router
 
 ACCOUNT_TYPE = {
-    "user": "کاربر معمولی",
-    "reseller": "فروشنده",
-    "admin": "ادمین",
-    "super_user": "ادمین اصلی",
+    "user": "Пользователь",
+    "reseller": "Реселлер",
+    "admin": "Админ",
+    "super_user": "Суперадмин",
 }
 
 
@@ -21,12 +21,12 @@ ACCOUNT_TYPE = {
 async def account(qmsg: Message | CallbackQuery, user: User):
     balance = await user.get_balance()
     text = f"""
-✅ اطلاعات حساب شما:
+✅ ✅ Информация о вашем аккаунте::
 
-💬 نام کاربری: {f'@{user.username}' if user.username else '➖'}
-📲 شناسه کاربری: <code>{user.id}</code>
-💲 اعتبار در دسترس: <b>{balance:,}</b> تومان
-🔋 سرویس‌های فعال: <b>{await user.proxies.all().count()}</b>
+💬 👤 Имя пользователя: {f'@{user.username}' if user.username else '➖'}
+📲 🆔 Ваш ID: <code>{user.id}</code>
+💲 💰 Баланс: <b>{balance:,}</b> руб.
+🔋 🔋 Активных сервисов: <b>{await user.proxies.all().count()}</b>
 """
 
     if isinstance(qmsg, CallbackQuery):

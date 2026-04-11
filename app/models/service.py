@@ -55,7 +55,7 @@ class Service(TimedBase):
     def display_name(self):
         if not self.price:
             return self.name
-        return f"{self.name} | {self.price:,} تومان"
+        return f"{self.name} | {self.price:,} руб."
 
     def get_price(self) -> int:
         return self.price

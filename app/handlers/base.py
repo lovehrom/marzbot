@@ -37,12 +37,12 @@ async def shelp(message: Message, user: User):
 @router.callback_query(ForceJoin.Callback.filter())
 async def check_force_join(query: CallbackQuery, user: User):
     if await helpers.check_force_join(user):
-        await query.message.edit_text("✅ عضویت شما در کانال تایید شد")
+        await query.message.edit_text("✅ Подписка на канал подтверждена")
         return await main_menu_handler(
             query,
             user,
         )
-    await query.answer("🚫 عضویت شما در کانال تایید نشد!", show_alert=True)
+    await query.answer("🚫 Подписка не подтверждена!", show_alert=True)
 
 
 @router.message(~IsJoinedToChannel(send_alert=False))
@@ -53,7 +53,7 @@ async def force_join_ph(message: Message):
 @router.message()
 async def command_not_found(message: Message):
     text = """
-🤕 متوجه دستور ارسالی نشدم!
-برای رفتن به منوی اصلی دستور /menu رو ارسال کنید😉
+🤕 Неизвестная команда!
+Для возврата в главное меню отправьте /menu 😉
     """
     await message.reply(text)

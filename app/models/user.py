@@ -88,6 +88,7 @@ class Transaction(TimedBase):
     class PaymentType(IntEnum):
         crypto = 1
         by_admin = 2
+        robokassa = 3 # Добавили новый тип
 
     class Status(IntEnum):
         waiting = 1
@@ -112,6 +113,25 @@ class Transaction(TimedBase):
     )
     crypto_payment: fields.ReverseRelation["CryptoPayment"]
     byadmin_payment: fields.ReverseRelation["ByAdminPayment"]
+    robokassa_payment: fields.ReverseRelation["RobokassaPayment"] # Связь для Robokassa
+
+
+class RobokassaPayment(TimedBase):
+    class Meta:
+        table = "robokassa_payments"
+
+    type = fields.IntEnumField(
+        Transaction.PaymentType, default=Transaction.PaymentType.robokassa
+    )
+    # Здесь будем хранить ID инвойса из системы Robokassa, если понадобится
+    robokassa_invoice_id = fields.CharField(max_length=64, null=True)
+    
+    transaction: fields.OneToOneRelation[Transaction] = fields.OneToOneField(
+        "models.Transaction",
+        "robokassa_payment",
+        on_delete=fields.CASCADE,
+        null=False,
+    )
 
 
 class CryptoPayment(TimedBase):

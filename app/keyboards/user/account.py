@@ -21,11 +21,11 @@ class UserPanel(InlineKeyboardBuilder):
     def __init__(self, user: User, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.button(
-            text="💳 شارژ حساب",
+            text="💳 💰 Пополнить баланс",
             callback_data=self.Callback(action=UserPanelAction.charge),
         )
         self.button(
-            text="📍 اشتراک‌های من",
+            text="📍 📍 Мои подписки",
             callback_data=self.Callback(action=UserPanelAction.proxies),
         )
         self.adjust(1, 1)

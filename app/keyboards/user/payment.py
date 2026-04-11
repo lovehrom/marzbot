@@ -6,15 +6,9 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 import config
 from app.keyboards.user.account import UserPanel, UserPanelAction
 
-# from app.models.user import TrxSwapPayment
-
-
 class ChargeMethods(str, Enum):
-    crypto = "crypto"
-    perfectmoney = "perfectmoney"
-    card_to_card = "card_to_card"
-    rial_gateway = "rial_gateway"
-
+    robokassa = "robokassa"
+    # Другие методы можно добавить сюда позже (например, lavas или cryptomus)
 
 class ChargePanel(InlineKeyboardBuilder):
     class Callback(CallbackData, prefix="payment"):
@@ -22,12 +16,12 @@ class ChargePanel(InlineKeyboardBuilder):
 
     def __init__(self, settings: dict[str, bool], *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        if settings.get("PAYMENT:CRYPTO"):
-            self.button(
-                text="💸 ارز دیجیتال",
-                callback_data=self.Callback(method=ChargeMethods.crypto),
-            )
-        self.adjust(1, 1, 1)
+        # Для тестов выводим Robokassa всегда, либо можно привязать к PAYMENT:CRYPTO в .env
+        self.button(
+            text="💳 Банковская карта (Robokassa)",
+            callback_data=self.Callback(method=ChargeMethods.robokassa),
+        )
+        self.adjust(1)
 
 
 class SelectPayAmount(InlineKeyboardBuilder):
@@ -38,17 +32,14 @@ class SelectPayAmount(InlineKeyboardBuilder):
 
     def __init__(self, method: ChargeMethods, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+        # Установили адекватные суммы для пополнения
         amount_list = [
-            20_000,
-            50_000,
-            75_000,
-            95_000,
-            130_000,
-            195_000,
-            275_000,
-            330_000,
-            400_000,
-            600_000,
+            100,
+            250,
+            500,
+            1000,
+            2500,
+            5000,
         ]
         for amount in amount_list:
             free = int(
@@ -58,24 +49,25 @@ class SelectPayAmount(InlineKeyboardBuilder):
                 else amount * (config.PAYMENTS_DISCOUNT_ON_PERCENT / 100)
             )
             self.button(
-                text=f"{amount:,} تومان"
+                text=f"{amount:,} руб."
                 if not free
-                else f"{free:,} 🔥 + {amount:,} تومان",
+                else f"{amount:,} руб. (+{free:,} 🔥)",
                 callback_data=self.Callback(amount=amount, free=free, method=method),
             )
+        
         self.button(
-            text="✍️ مبلغ دلخواه",
+            text="✍️ Своя сумма",
             callback_data=self.Callback(amount=0, method=method),
         )
 
         self.button(
-            text="🔙 برگشت",
+            text="🔙 Назад",
             callback_data=UserPanel.Callback(action=UserPanelAction.charge),
         )
-        self.adjust(2, 2, 2, 2, 1, 1, 1)
+        self.adjust(2, 2, 2, 1, 1)
 
 
-class PayCryptoUrl(InlineKeyboardBuilder):
+class PayRoboUrl(InlineKeyboardBuilder):
     def __init__(self, url: str, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.button(text="💳 پرداخت", url=url)
+        self.button(text="💳 Оплатить счет", url=url)

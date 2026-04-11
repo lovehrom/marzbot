@@ -208,7 +208,7 @@ User info: <code>/info {transaction.user_id}</code>
     await message.answer(text)
     await bot.send_message(
         user_to_get.id,
-        f"✅ مبلغ {transaction.amount:,} تومان از طرف <code>{user.id}</code> به حساب شما اضافه شد!",
+        f"✅ {transaction.amount:,} руб. от <code>{user.id}</code> зачислено!",
     )
 
 
@@ -468,7 +468,7 @@ async def manage_user_action(
         id=callback_data.user_id,
     ).first()
     if not managed_user:
-        return await query.answer(f"❌ کاربر یافت نشد!")
+        return await query.answer(f"❌ Пользователь не найден!")
 
     if callback_data.action == ManageUserAction.discount_percent:
         await user.fetch_related("setting")
@@ -476,13 +476,13 @@ async def manage_user_action(
             max_discount = user.setting.discount_percentage if user.setting else 0
             if not max_discount:
                 return await query.answer(
-                    "درصد تخفیف شما تنظیم نشده است، بنابراین امکان تنظیم برای کاربران خود را ندارید! لطفا با پشتیبانی تماس بگیرید.",
+                    "Ваша скидка не установлена، بنابراین امکان تنظیم برای کاربران خود را ندارید! Пожалуйста, свяжитесь с поддержкой.",
                     show_alert=True,
                 )
         else:
             max_discount = 100
         text = f"""
-درصد تخفیف جدید کاربر را وارد کنید:
+Введите скидку пользователя (%):
 (حداکثر {max_discount} درصد)
     """
         await state.set_state(ManageUserForm.discount_percent)
@@ -493,24 +493,24 @@ async def manage_user_action(
             max_count = user.setting.daily_test_services if user.setting else 0
             if not max_count or max_count <= 1:
                 return await query.answer(
-                    "تعداد سرویس‌های تست شما تنظیم نشده است، بنابراین امکان تنظیم برای کاربران خود را ندارید! لطفا با پشتیبانی تماس بگیرید.",
+                    "تعداد سرویس‌های تست شما تنظیم نشده است، بنابراین امکان تنظیم برای کاربران خود را ندارید! Пожалуйста, свяжитесь с поддержкой.",
                     show_alert=True,
                 )
         else:
             max_count = "+inf"
         text = f"""
-تعداد سرویس‌های تست که این کاربر در یک روز می‌تواند دریافت کند را وارد کنید:
+Введите лимит тестовых сервисов в день:
 (حداکثر {max_count})
     """
         await state.set_state(ManageUserForm.daily_test_services)
 
     elif callback_data.action == ManageUserAction.proxy_prefix:
         text = f"""
-💡 این متن در ابتدای نام پروکسی‌های شما قرار می‌گیرد و فقط میتواند شامل حروف انگلیسی یا اعداد باشد!
+💡 Этот текст добавляется в начало имени прокси. Только английские буквы и цифры!
 
-💡 مقدار پیشفرض برای پروکسی‌ها <code>{config.DEFAULT_USERNAME_PREFIX}</code> می‌باشد
+💡 Значение по умолчанию: <code>{config.DEFAULT_USERNAME_PREFIX}</code>  
 
-✍️ پیشوند پروکسی را برای تنظیم وارد کنید:
+✍️ Введите префикс для прокси:
 """
         await state.set_state(ManageUserForm.proxy_prefix)
     else:
@@ -538,7 +538,7 @@ async def manage_users_discount_percent(
         amount = int(message.text)
     except ValueError:
         return await message.reply(
-            f"درصد باید مقداری عددی باشد! لطفا دوباره ارسال کنید:"
+            f"Введите число!"
         )
     if user.role != User.Role.super_user:
         max_discount = user.setting.discount_percentage if user.setting else 0
@@ -546,7 +546,7 @@ async def manage_users_discount_percent(
         max_discount = 100
     if amount > max_discount:
         return await message.reply(
-            f"درصد باید مقداری کمتر از {max_discount} باشد! دوباره ارسال کنید:"
+            f"Скидка должна быть меньше {max_discount}!"
         )
 
     data = await state.get_data()
@@ -559,7 +559,7 @@ async def manage_users_discount_percent(
         await q.update(discount_percentage=amount)
 
     await state.clear()
-    await message.reply(f"درصد تخفیف کاربر به {amount} تنظیم شد!")
+    await message.reply(f"Скидка пользователя: {amount}%")
 
 
 @router.message(ManageUserForm.daily_test_services, SuperUserAccess())
@@ -570,13 +570,13 @@ async def manage_users_daily_test_services(
         amount = int(message.text)
     except ValueError:
         return await message.reply(
-            f"تعداد باید مقداری عددی باشد! لطفا دوباره ارسال کنید:"
+            f"Введите число!"
         )
     if user.role != User.Role.super_user:
         max_count = user.setting.daily_test_services if user.setting else 0
         if amount > max_count:
             return await message.reply(
-                f"تعداد باید مقداری کمتر از {max_count} باشد! دوباره ارسال کنید:"
+                f"Значение должно быть меньше {max_count}!"
             )
 
     data = await state.get_data()
@@ -589,7 +589,7 @@ async def manage_users_daily_test_services(
         await q.update(daily_test_services=amount)
 
     await state.clear()
-    await message.reply(f"تعداد سرویس‌های تست روزانه کاربر به {amount} تنظیم شد!")
+    await message.reply(f"Лимит тестовых сервисов: {amount}")
 
 
 @router.message(ManageUserForm.proxy_prefix, SuperUserAccess())
@@ -599,14 +599,14 @@ async def manage_users_daily_test_services(
     username_prefix = message.text
     if not username_prefix.isalnum():
         return await message.answer(
-            f"❌ پیشوند پروکسی‌ها فقط می‌تواند شامل اعداد و حروف انگلیسی باشد! دوباره ارسال کنید:",
+            f"❌ Префикс может содержать только английские буквы и цифры!",
             reply_markup=CancelUserForm(cancel=True).as_markup(
                 one_time_keyboard=True, resize_keyboard=True
             ),
         )
     if not (3 < len(username_prefix) < 20):
         return await message.answer(
-            f"❌ پیشوند پروکسی‌ها فقط می‌تواند بین ۴ تا ۲۰ کاراکتر باشد! دوباره ارسال کنید:",
+            f"❌ Префикс должен быть от 4 до 20 символов!",
             reply_markup=CancelUserForm(cancel=True).as_markup(
                 one_time_keyboard=True, resize_keyboard=True
             ),
@@ -623,7 +623,7 @@ async def manage_users_daily_test_services(
 
     await state.clear()
     await message.reply(
-        f"پیشوند پروکسی‌های کاربر به <code>{username_prefix}</code> تنظیم شد!"
+        f"Префикс установлен: <code>{username_prefix}</code>"
     )
 
 

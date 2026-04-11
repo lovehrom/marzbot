@@ -52,6 +52,12 @@ async def on_startup():
     global bot_username
     bot_username = (await bot.get_me()).username
     scheduler.start()
+    from app.sync_marzban import sync_proxies
+    try:
+        scheduler.remove_job("sync_marzban")
+    except:
+        pass
+    scheduler.add_job(sync_proxies, "interval", minutes=10, id="sync_marzban")
 
 
 async def on_shutdown():

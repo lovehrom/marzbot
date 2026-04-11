@@ -1,20 +1,20 @@
 from aiogram.filters.callback_data import CallbackData
 from aiogram.utils.keyboard import InlineKeyboardBuilder, ReplyKeyboardBuilder
+from aiogram.types import KeyboardButton
 
 import config
 
-
 class MainMenu(ReplyKeyboardBuilder):
-    proxies = "📍 اشتراک‌های من"
-    purchase = "🚀 خرید اشتراک"
-    account = "💎 حساب من"
-    charge = "💰 شارژ حساب"
-    help = "🗒 راهنما"
-    support = "☑️ پشتیبانی"
-    faq = "❓ سوالات متداول"
-    back = "🔙 برگشت"
-    cancel = "🚫 لغو"
-    main_menu = "📱 منوی اصلی"
+    proxies = "💎 Мои подписки"
+    purchase = "🚀 Купить подписку"
+    account = "👤 Мой аккаунт"
+    charge = "💳 Пополнить баланс"
+    help = "📝 Инструкция"
+    support = "✅ Поддержка"
+    faq = "❓ Часто задаваемые вопросы"
+    back = "🔙 Назад"
+    cancel = "🚫 Отмена"
+    main_menu = "📱 Главное меню"
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
@@ -39,7 +39,7 @@ class CancelUserForm(ReplyKeyboardBuilder):
 
 
 class ForceJoin(InlineKeyboardBuilder):
-    check = "✅ بررسی عضویت"
+    check = "✅ Проверить подписку"
 
     class Callback(CallbackData, prefix="check_force_join"):
         pass

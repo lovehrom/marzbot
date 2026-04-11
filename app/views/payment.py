@@ -1,89 +1,59 @@
 import hashlib
-import hmac
-import json
-from datetime import datetime as dt
-
-from aiohttp import web
-from tortoise.transactions import in_transaction
-
 import config
-from app.main import bot
-from app.models.user import CryptoPayment, Transaction
-from payment_clients.nowpayments import PaymentResponse
+from aiohttp import web
+from app.models.user import Transaction, User
+from app.logger import get_logger
 
-from . import logger
-
+logger = get_logger("payments")
 routes = web.RouteTableDef()
 
+@routes.post('/robokassa/result')
+async def robokassa_result_view(request: web.Request):
+    try:
+        data = await request.post()
+        out_sum = data.get("OutSum")
+        inv_id = data.get("InvId")
+        signature = data.get("SignatureValue")
 
-def hmac_sign(key: str, data: dict) -> str:
-    """
-    sort the post data from nowpayments and sign it with the secret key and sha512
-    """
-    return hmac.new(
-        key.encode(),
-        json.dumps(dict(sorted(data.items())), separators=(",", ":")).encode(),
-        hashlib.sha512,
-    ).hexdigest()
+        if not all([out_sum, inv_id, signature]):
+            return web.Response(text="error: missing fields", status=400)
 
+        # Проверка подписи по Password2
+        my_sig_str = f"{out_sum}:{inv_id}:{config.ROBOKASSA_PASS_2}"
+        my_sig = hashlib.md5(my_sig_str.encode()).hexdigest().upper()
 
-def verify_signature(sig: str, key: str, data: dict) -> bool:
-    if sig == hmac_sign(key, data):
-        return True
-    return False
+        if signature.upper() == my_sig:
+            # Ищем транзакцию. У тебя в модели статус 5 — это finished.
+            transaction = await Transaction.get_or_none(id=int(inv_id)).prefetch_related("user")
+            
+            if transaction and transaction.status == Transaction.Status.waiting:
+                # В твоей модели статус 5 — это завершенный платеж
+                transaction.status = Transaction.Status.finished
+                # Записываем сколько реально оплачено
+                transaction.amount_paid = int(float(out_sum))
+                await transaction.save()
+                
+                logger.info(f"Payment SUCCESS for User {transaction.user_id}: {out_sum} RUB")
+                
+                # Отправляем уведомление пользователю
+                try:
+                    from app.main import bot
+                    await bot.send_message(
+                        transaction.user_id, 
+                        f"✅ <b>Баланс пополнен!</b>\n\nЗачислено: <b>{out_sum} руб.</b>"
+                    )
+                except Exception as e:
+                    logger.error(f"Telegram notify error: {e}")
 
+                return web.Response(text=f"OK{inv_id}")
+            
+            # Если транзакция уже завершена, просто отвечаем Робокассе OK
+            elif transaction and transaction.status == Transaction.Status.finished:
+                return web.Response(text=f"OK{inv_id}")
 
-@routes.post("/npipn/")
-async def verify_payment(request: web.Request):
-    if not request.can_read_body:
-        return
-    data = await request.json()
-    logger.info(f"got ipn from nowpayments: {data}")
-    if config.NP_IPN_SECRET_KEY:
-        nowpayments_sig = request.headers.get("x-nowpayments-sig")
-        if not verify_signature(nowpayments_sig, config.NP_IPN_SECRET_KEY, data):
-            return
+        logger.warning(f"Signature mismatch for InvId {inv_id}")
+        return web.Response(text="bad signature", status=400)
 
-    payment = PaymentResponse(**data)
-    async with in_transaction():
-        transaction = (
-            await Transaction.filter(id=payment.order_id)
-            .prefetch_related("crypto_payment")
-            .first()
-        )
-        if not transaction:
-            return
-
-        if payment.payment_status == "finished" and (
-            transaction.status
-            not in [Transaction.Status.finished, Transaction.Status.partially_paid]
-        ):
-            transaction.status = Transaction.Status.finished
-            transaction.finished_at = dt.now()
-            transaction.amount_paid = (
-                transaction.crypto_payment.usdt_rate * payment.price_amount
-            )
-            await transaction.save()
-            await transaction.refresh_from_db()
-            await transaction.crypto_payment.update_from_dict(
-                {
-                    "pay_currency": payment.pay_currency,
-                    "pay_amount": payment.pay_amount,
-                    "nowpm_updated_at": payment.updated_at,
-                    "payment_status": CryptoPayment.PaymentStatus.finished,
-                    "outcome_amount": payment.outcome_amount,
-                    "outcome_currency": payment.outcome_currency,
-                    "purchase_id": payment.purchase_id,
-                    "pay_address": payment.pay_address,
-                }
-            ).save()
-            text = f"""
-✅ پرداخت شما از طریق ارز دیجیتال با موفقیت تأیید شد و مبلغ <b>{transaction.amount:,}</b> تومان به حساب شما اضافه شد!
-
-💳 شماره فاکتور: <b>{transaction.id}</b>
-💴 مبلغ پرداختی: <b>{transaction.amount_paid:,}</b> تومان
-‌‌
-"""
-            await bot.send_message(transaction.user_id, text)
-
-    return web.Response(status=200)
+    except Exception as e:
+        logger.error(f"Global payment error: {e}")
+        return web.Response(text="internal error", status=500)

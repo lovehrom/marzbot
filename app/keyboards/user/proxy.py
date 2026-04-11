@@ -53,7 +53,7 @@ class Proxies(InlineKeyboardBuilder):
             )
         if prev_page:
             self.button(
-                text="⬅️ صفحه قبل",
+                text="⬅️ Назад",
                 callback_data=self.Callback(
                     user_id=user_id,
                     parent_id=parent_id,
@@ -63,7 +63,7 @@ class Proxies(InlineKeyboardBuilder):
             )
         if next_page:
             self.button(
-                text="➡️ صفحه بعد",
+                text="➡️ Далее",
                 callback_data=self.Callback(
                     user_id=user_id,
                     parent_id=parent_id,
@@ -106,7 +106,7 @@ class ProxyPanel(InlineKeyboardBuilder):
         super().__init__(*args, **kwargs)
         if proxy.status == ProxyStatus.active:
             self.button(
-                text="🔗 دریافت لینک‌های اتصال",
+                text="🔗 Получить ссылки",
                 callback_data=self.Callback(
                     proxy_id=proxy.id,
                     user_id=user_id,
@@ -115,7 +115,7 @@ class ProxyPanel(InlineKeyboardBuilder):
                 ),
             )
             self.button(
-                text="🔑 تغییر پسوورد",
+                text="🔑 Сменить пароль",
                 callback_data=self.Callback(
                     proxy_id=proxy.id,
                     user_id=user_id,
@@ -125,7 +125,7 @@ class ProxyPanel(InlineKeyboardBuilder):
             )
         else:
             self.button(
-                text="🗑 حذف از لیست اشتراک‌های من",
+                text="🗑 Удалить 📍 Мои подписки",
                 callback_data=self.Callback(
                     proxy_id=proxy.id,
                     user_id=user_id,
@@ -135,7 +135,7 @@ class ProxyPanel(InlineKeyboardBuilder):
             )
         if renewable:
             self.button(
-                text="♻️ تمدید سرویس",
+                text="♻️ Продлить",
                 callback_data=self.Callback(
                     proxy_id=proxy.id,
                     user_id=user_id,
@@ -144,7 +144,7 @@ class ProxyPanel(InlineKeyboardBuilder):
                 ),
             )
         self.button(
-            text="🔙 برگشت",
+            text="🔙 Назад",
             callback_data=Proxies.Callback(
                 user_id=user_id,
                 action=ProxiesActions.show,
@@ -168,7 +168,7 @@ class ResetPassword(InlineKeyboardBuilder):
     ) -> None:
         super().__init__(*args, **kwargs)
         self.button(
-            text="🔑 تغییر پسوورد",
+            text="🔑 Сменить пароль",
             callback_data=ProxyPanel.Callback(
                 proxy_id=proxy_id,
                 user_id=user_id,
@@ -177,7 +177,7 @@ class ResetPassword(InlineKeyboardBuilder):
             ),
         )
         self.button(
-            text="🔑 تغییر اتصال هوشمند",
+            text="🔑 Сменить ссылку",
             callback_data=ProxyPanel.Callback(
                 proxy_id=proxy_id,
                 user_id=user_id,
@@ -186,7 +186,7 @@ class ResetPassword(InlineKeyboardBuilder):
             ),
         )
         self.button(
-            text=f"🔙 لغو",
+            text=f"🔙 Отмена",
             callback_data=Proxies.Callback(
                 proxy_id=proxy_id,
                 user_id=user_id,
@@ -207,7 +207,7 @@ class ConfirmProxyPanel(InlineKeyboardBuilder):
     ) -> None:
         super().__init__()
         self.button(
-            text="⚠️ تأیید",
+            text="⚠️ Подтвердить",
             callback_data=ProxyPanel.Callback(
                 proxy_id=proxy_id,
                 user_id=user_id,
@@ -218,7 +218,7 @@ class ConfirmProxyPanel(InlineKeyboardBuilder):
         )
 
         self.button(
-            text=f"🔙 لغو",
+            text=f"🔙 Отмена",
             callback_data=Proxies.Callback(
                 proxy_id=proxy_id,
                 user_id=user_id,
@@ -249,7 +249,7 @@ class ProxyLinks(InlineKeyboardBuilder):
             ),
         )
         self.button(
-            text="📱 Qr Code اتصال هوشمند",
+            text="📱 QR-код",
             callback_data=ProxyPanel.Callback(
                 proxy_id=proxy.id,
                 user_id=user_id,
@@ -258,7 +258,7 @@ class ProxyLinks(InlineKeyboardBuilder):
             ),
         )
         self.button(
-            text=f"🔙 برگشت",
+            text=f"🔙 Назад",
             callback_data=Proxies.Callback(
                 proxy_id=proxy.id,
                 user_id=user_id,
@@ -297,7 +297,7 @@ class RenewSelectService(InlineKeyboardBuilder):
                 ),
             )
         self.button(
-            text=f"🔙 برگشت",
+            text=f"🔙 Назад",
             callback_data=Proxies.Callback(
                 proxy_id=proxy.id,
                 user_id=user_id,
@@ -332,7 +332,7 @@ class RenewSelectMethod(InlineKeyboardBuilder):
     ) -> None:
         super().__init__(*args, **kwargs)
         self.button(
-            text="♻️ تمدید آنی اشتراک",
+            text="♻️ Мгновенное продление",
             callback_data=self.Callback(
                 proxy_id=proxy.id,
                 service_id=service_id,
@@ -342,7 +342,7 @@ class RenewSelectMethod(InlineKeyboardBuilder):
             ),
         )
         self.button(
-            text=f"🔙 برگشت",
+            text=f"🔙 Назад",
             callback_data=Proxies.Callback(
                 proxy_id=proxy.id,
                 user_id=user_id,
@@ -368,7 +368,7 @@ class ConfirmRenew(InlineKeyboardBuilder):
         super().__init__(*args, **kwargs)
         if has_balance:
             self.button(
-                text="✅ فعالسازی",
+                text="✅ Активировать",
                 callback_data=RenewSelectMethod.Callback(
                     proxy_id=proxy.id,
                     service_id=service_id,
@@ -380,13 +380,13 @@ class ConfirmRenew(InlineKeyboardBuilder):
             )
         else:
             self.button(
-                text="💳 افزایش موجودی",
+                text="💳 Пополнить баланс",
                 callback_data=account.UserPanel.Callback(
                     action=account.UserPanelAction.charge
                 ),
             )
         self.button(
-            text="🔙 برگشت",
+            text="🔙 Назад",
             callback_data=RenewSelectService.Callback(
                 proxy_id=proxy.id,
                 service_id=service_id,

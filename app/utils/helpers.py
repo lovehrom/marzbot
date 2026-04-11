@@ -5,7 +5,7 @@ from datetime import datetime as dt
 from datetime import timedelta as td
 from typing import Literal
 
-from jdatetime import datetime as jdt
+# from jdatetime import datetime as jdt
 from pytz import timezone
 
 import config
@@ -25,11 +25,11 @@ intervals_en = (
 
 
 intervals_fa = (
-    ("ماه", 2592000),  # 60 * 60 * 24 * 30
-    ("روز", 86400),  # 60 * 60 * 24
-    ("ساعت", 3600),  # 60 * 60
-    ("دقیقه", 60),
-    ("ثانیه", 1),
+    ("мес.", 2592000),  # 60 * 60 * 24 * 30
+    ("дн.", 86400),  # 60 * 60 * 24
+    ("ч.", 3600),  # 60 * 60
+    ("мин.", 60),
+    ("сек.", 1),
 )
 
 
@@ -47,11 +47,11 @@ def hr_time(seconds: int, lang: Literal["en", "fa"] = "en", granularity: int = 2
             if value == 1 and lang == "en":
                 name = name.rstrip("s")
             result.append(f"{int(value)} {name}")
-    return " و ".join(result[:granularity])
+    return " и ".join(result[:granularity])
 
 
 def hr_date(timestamp: int, format: str = "%Y/%m/%d %H:%M") -> str:
-    return jdt.fromtimestamp(timestamp, tz=timezone("Asia/Tehran")).strftime(format)
+    from datetime import datetime as dt2; return dt2.fromtimestamp(timestamp, tz=timezone("Asia/Yekaterinburg")).strftime(format)
 
 
 def get_until_expires(expire_timestamp: int, lang: Literal["en", "fa"] = "en") -> str:
@@ -70,15 +70,15 @@ size_names_en = (
     "YB",
 )
 size_names_fa = (
-    "بایت",
-    "کیلوبایت",
-    "مگابایت",
-    "گیگابایت",
-    "ترابایت",
-    "پتابایت",
-    "اگزابایت",
-    "زتابایت",
-    "یوتابایت",
+    "Б",
+    "КБ",
+    "МБ",
+    "ГБ",
+    "ТБ",
+    "ПБ",
+    "ЭБ",
+    "ЗБ",
+    "ЙБ",
 )
 
 

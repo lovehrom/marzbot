@@ -36,7 +36,7 @@ class ManageUser(InlineKeyboardBuilder):
     ) -> None:
         super().__init__(*args, **kwargs)
         self.button(
-            text=f"پروکسی‌ها",
+            text=f"Прокси",
             callback_data=proxy.Proxies.Callback(
                 user_id=user.id,
                 action=proxy.ProxiesActions.show,
