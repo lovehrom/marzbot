@@ -1,90 +1,109 @@
-## نسخه رایگان ربات فروش مرزبات
+# MarzBot
 
-این نسخه، نسخه رایگان بوده و بسیاری از امکانات اصلی مدیریتی و کاربردی ربات را شامل نمی‌شود.
+<p align="center">
+  <strong>VPN Subscription Manager Telegram Bot</strong><br>
+  Sales, management, and Marzban panel integration
+</p>
 
-این نسخه ممکن است مشکلاتی داشته باشد! با ضمانت خود از آن استفاده کنید.
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.11+-blue?logo=python" alt="Python">
+  <img src="https://img.shields.io/badge/aiogram-3.x-2CA5E0?logo=telegram" alt="aiogram">
+  <img src="https://img.shields.io/badge/License-AGPL--3.0-green" alt="License">
+  <img src="https://img.shields.io/badge/Docker-Ready-2496ED?logo=docker" alt="Docker">
+</p>
 
-### بخشی از قابلیت‌های ربات:
+---
 
-امکان اتصال به چندین سرور مرزبان و مدیریت آن ها.
+## Overview
 
-امکان تنظیم اینباند‌های هر سرویس به صورت مجزا.
+MarzBot is a Telegram bot for managing VPN subscriptions via the [Marzban](https://github.com/Gozargah/Marzban) panel. It handles service sales, user management, payment processing, and multi-server administration — all from Telegram.
 
-امکان تنظیم flow به صورت پیشفرض برای هر سرویس.
+> **Note:** This is the free (open-source) edition. Some advanced features are available in the premium version.
 
-پشتیبانی از درگاه پرداخت کریپتو.
+## Features
 
+- **Multi-server Marzban integration** — connect and manage multiple Marzban instances
+- **Per-service inbound & flow configuration** — customize each subscription individually
+- **Crypto payment support** — built-in NowPayments and Nobitex gateways
+- **User management** — registration, balance top-up, proxy management
+- **Docker-ready** — one-command deployment with `docker-compose`
 
-### بخشی از قابلیت‌های نسخه پریمیوم ربات:
+## Tech Stack
 
-۱) انواع متود‌های پرداخت:  
+| Component | Technology |
+|-----------|-----------|
+| Bot Framework | [aiogram 3.x](https://docs.aiogram.dev/) |
+| Language | Python 3.11+ |
+| Database | SQLite (via [ Tortoise ORM](https://tortoise-orm.readthedocs.io/)) |
+| Payments | NowPayments, Nobitex |
+| Deployment | Docker / Docker Compose |
+| Marzban API | Custom async client (`marzban_client/`) |
 
-    کریپتو  
-    پرفکت‌مانی  
-    کارت به کارت (امکان راه‌اندازی تایید خودکار وجود دارد)   
-    درگاه ریالی  
+## Architecture
 
-۲) تعریف سطوح مختلف کاربری با دسترسی‌های متفاوت  
+```
+marzbot/
+├── app/
+│   ├── handlers/       # Telegram bot command handlers
+│   ├── keyboards/      # Inline & reply keyboards
+│   ├── middlewares/    # ACL & auth middleware
+│   ├── models/         # Database models (user, service, proxy, server)
+│   ├── views/          # Payment views
+│   ├── jobs/           # Background jobs (cleanup unpaid)
+│   └── utils/          # Filters, helpers, settings, logging
+├── marzban_client/     # Async Marzban API client (auto-generated models)
+├── payment_clients/    # Payment gateway integrations
+├── migrations/         # Database migrations
+└── config.py           # Configuration loader
+```
 
-        ۱) کاربر معمولی  
-        ۲) فروشنده  
-        ۳) ادمین  
-        ۴) ادمین اصلی  
+## Quick Start
 
-۳) امکانات ویژه ادمین برای کاربرانی که به ربات دعوت کرده است
+### Docker (recommended)
 
-    ادمین امکان دعوت کاربران به صورت خصوصی را داراست. تمام کاربران 
-    دعوت شده توسط هر ادمین، قابل مدیریت توسط همان ادمین بوده و 
-    می‌تواند حساب آن‌ها را شارژ کند، 
-    پروکسی‌های خریداری شده آن‌ها را مدیریت کند، 
-    پیشوند اختصاصی برای یوزرنیم پروکسی‌های ساخته شده تعریف کند،
-    امکان تعریف تعداد دفعات دریافت سرویس تست را برای هر زیرمجموعه دارد و ...
+```bash
+git clone https://github.com/lovehrom/marzbot.git
+cd marzbot
 
-۴) امکان تعریف پیشوند اختصاصی پروکسی برای هر کاربر
+# Configure environment
+cp .env.example .env
+# Edit .env with your bot token and Marzban credentials
 
-    در نسخه ویژه این امکان وجود دارد که پیشوند اختصاصی یوزرنیم پروکسی‌ها 
-    برای هر کاربر متفاوت تعریف شود.
+docker compose up -d
+```
 
-۵) بخش زیرمجوعه گیری
+### Manual
 
-    بخش زیرمجوعه گیری وجود دارد که کاربر می‌تواند به ازای دعوت دیگر کاربران 
-    اعتبار هدیه دریافت کند.
-    امکان غیرفعال کردن این بخش نیز در تنظیمات وجود خواهد داشت.
+```bash
+pip install -r requirements.txt
+python bot.py
+```
 
-۶) امکان تغییر نوع حساب کاربری به پس پرداخت یا اعتباری
+## Configuration
 
-    حساب کاربر می‌تواند اعتباری باشد و کاربر می‌تواند به اندازه سقف مشخص شده
-    در ربات خریدهای خود را انجام دهد و سپس اقدام به تسویه کند.
+Copy `.env.example` to `.env` and fill in:
 
-۷) محاسبه درآمد ها
+- `BOT_TOKEN` — Telegram bot token from [@BotFather](https://t.me/BotFather)
+- `MARZBAN_URL` — Your Marzban panel URL
+- `MARZBAN_USERNAME` / `MARZBAN_PASSWORD` — Marzban admin credentials
+- Payment gateway keys (NowPayments / Nobitex) — optional
 
-    محاسبه درآمدها به تفکیک هر ادمین/فروشنده و نمایش ریزفاکتورهای افزایش اعتبار یا خرید
+## Screenshots
 
-۸) قابلیت شخصی سازی متن و چینش دکمه‌های منو
+<!-- Add your screenshots here -->
+<p align="center">
+  <em>Screenshots coming soon</em>
+</p>
 
-۹) قابلیت فعال/غیرفعال کردن انواع بخش‌های ربات در تنظیمات
+## Contributing
 
-۱۰) اطلاع رسانی‌های مختلف به کاربر
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
 
-    اطلاع رسانی نزدیک به زمان انقضای سرویس.
-    اطلاع رسانی نزدیک به اتمام رسیدن حجم سرویس
-    اطلاع رسانی درصورت تغییر وضعیت سرویس
+Bug reports and feature requests are welcome via [Issues](https://github.com/lovehrom/marzbot/issues).
 
-۱۱) امکان تعریف تخفیف مجزا برای هر کاربر
+## License
 
-و امکانات دیگر...
-
-ربات بر بستر سرور‌های ابری خود ما اجرا میشه.
-
-هزینه اشتراک ربات به صورت ماهیانه ۱۰ دلار می‌باشد.
-
-در صورت تحمیل اضافه بار از سمت ربات شما (زیاد شدن کاربران) ممکن است هزینه‌های اضافه سرور شامل شما شود.
-
-
-تخفیف ویژه شامل کسانی میشه که قبلا به پروژه مرزبان دونیت کردن.
-
-برای اطلاعات بیشتر در تلگرام با من در ارتباط باشید:
-
-[@govfvck1](https://t.me/govfvck1)
-
-در صورت وجود هرگونه مشکل در ربات، با بازکردن issue جدید به اطلاع من برسونید.
+This project is licensed under the [GNU AGPL-3.0](LICENSE).
