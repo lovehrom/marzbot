@@ -88,7 +88,8 @@ class Transaction(TimedBase):
     class PaymentType(IntEnum):
         crypto = 1
         by_admin = 2
-        robokassa = 3 # Добавили новый тип
+        robokassa = 3
+        yookassa = 4
 
     class Status(IntEnum):
         waiting = 1
@@ -105,7 +106,7 @@ class Transaction(TimedBase):
     amount = fields.IntField(null=False)
     amount_paid = fields.IntField(null=True)
 
-    user: fields.ForeignKeyRelation["User"] = fields.ForeignKeyField(
+    user: fields.ForeignKeyRelation[User] = fields.ForeignKeyField(
         "models.User",
         "transactions",
         on_delete=fields.CASCADE,
@@ -113,7 +114,8 @@ class Transaction(TimedBase):
     )
     crypto_payment: fields.ReverseRelation["CryptoPayment"]
     byadmin_payment: fields.ReverseRelation["ByAdminPayment"]
-    robokassa_payment: fields.ReverseRelation["RobokassaPayment"] # Связь для Robokassa
+    robokassa_payment: fields.ReverseRelation["RobokassaPayment"]
+    yookassa_payment: fields.ReverseRelation["YookassaPayment"]
 
 
 class RobokassaPayment(TimedBase):
@@ -123,12 +125,29 @@ class RobokassaPayment(TimedBase):
     type = fields.IntEnumField(
         Transaction.PaymentType, default=Transaction.PaymentType.robokassa
     )
-    # Здесь будем хранить ID инвойса из системы Robokassa, если понадобится
-    robokassa_invoice_id = fields.CharField(max_length=64, null=True)
-    
+    robokassa_invoice_id = fields.CharField(max_length=512, null=True)
+
     transaction: fields.OneToOneRelation[Transaction] = fields.OneToOneField(
         "models.Transaction",
         "robokassa_payment",
+        on_delete=fields.CASCADE,
+        null=False,
+    )
+
+
+class YookassaPayment(TimedBase):
+    class Meta:
+        table = "yookassa_payments"
+
+    type = fields.IntEnumField(
+        Transaction.PaymentType, default=Transaction.PaymentType.yookassa
+    )
+    yookassa_payment_id = fields.CharField(max_length=512, null=True)
+    status = fields.CharField(max_length=64, null=True)
+
+    transaction: fields.OneToOneRelation[Transaction] = fields.OneToOneField(
+        "models.Transaction",
+        "yookassa_payment",
         on_delete=fields.CASCADE,
         null=False,
     )
@@ -153,20 +172,20 @@ class CryptoPayment(TimedBase):
         Transaction.PaymentType, default=Transaction.PaymentType.crypto
     )
     usdt_rate = fields.IntField()
-    invoice_id = fields.CharField(max_length=64)
-    order_id = fields.CharField(max_length=64, null=True)
+    invoice_id = fields.CharField(max_length=512)
+    order_id = fields.CharField(max_length=512, null=True)
     price_amount = fields.FloatField()
     price_currency = fields.CharField(max_length=20)
     nowpm_created_at = fields.DatetimeField(null=True)
 
     pay_currency = fields.CharField(max_length=32, null=True)
     pay_amount = fields.FloatField(null=True)
-    order_description = fields.CharField(max_length=64, null=True)
+    order_description = fields.CharField(max_length=512, null=True)
     nowpm_updated_at = fields.DatetimeField(null=True)
     payment_status = fields.IntEnumField(PaymentStatus, default=PaymentStatus.waiting)
     outcome_amount = fields.FloatField(null=True)
     outcome_currency = fields.CharField(max_length=20, null=True)
-    purchase_id = fields.CharField(max_length=64, null=True)
+    purchase_id = fields.CharField(max_length=512, null=True)
     pay_address = fields.CharField(max_length=128, null=True)
 
     transaction: fields.OneToOneRelation[Transaction] = fields.OneToOneField(

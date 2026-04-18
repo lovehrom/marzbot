@@ -49,16 +49,11 @@ if not re.match(r"^(?!_)[A-Za-z0-9_]+$", DEFAULT_USERNAME_PREFIX):
     )
 
 # --- БЛОК НАСТРОЕК ROBOKASSA (НОВОЕ) ---
-ROBOKASSA_LOGIN = config("ROBOKASSA_LOGIN", default="")
-ROBOKASSA_PASS_1 = config("ROBOKASSA_PASS_1", default="")
-ROBOKASSA_PASS_2 = config("ROBOKASSA_PASS_2", default="")
+ROBOKASSA_LOGIN = config("ROBOKASSA_LOGIN", default="твой_логин_магазина")
+ROBOKASSA_PASS_1 = config("ROBOKASSA_PASS_1", default="твой_пароль_1")
+ROBOKASSA_PASS_2 = config("ROBOKASSA_PASS_2", default="твой_пароль_2")
 IS_TEST = config("IS_TEST", default=1, cast=int)
 # --------------------------------------
-
-# --- YooKassa ---
-YOOKASSA_SHOP_ID = config("YOOKASSA_SHOP_ID", default="")
-YOOKASSA_SECRET_KEY = config("YOOKASSA_SECRET_KEY", default="")
-# ----------------
 
 PAYMENTS_DISCOUNT_ON = config(
     "PAYMENTS_DISCOUNT_ON", default=400000, cast=int

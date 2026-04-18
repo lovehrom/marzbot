@@ -6,10 +6,9 @@ from aiogram.utils.keyboard import InlineKeyboardBuilder
 import config
 from app.keyboards.user.account import UserPanel, UserPanelAction
 
-
 class ChargeMethods(str, Enum):
-    yookassa = "yookassa"
-
+    robokassa = "robokassa"
+    # Другие методы можно добавить сюда позже (например, lavas или cryptomus)
 
 class ChargePanel(InlineKeyboardBuilder):
     class Callback(CallbackData, prefix="payment"):
@@ -17,9 +16,10 @@ class ChargePanel(InlineKeyboardBuilder):
 
     def __init__(self, settings: dict[str, bool], *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+        # Для тестов выводим Robokassa всегда, либо можно привязать к PAYMENT:CRYPTO в .env
         self.button(
-            text="💳 Банковская карта",
-            callback_data=self.Callback(method=ChargeMethods.yookassa),
+            text="💳 Банковская карта (Robokassa)",
+            callback_data=self.Callback(method=ChargeMethods.robokassa),
         )
         self.adjust(1)
 
@@ -32,7 +32,15 @@ class SelectPayAmount(InlineKeyboardBuilder):
 
     def __init__(self, method: ChargeMethods, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        amount_list = [100, 250, 500, 1000, 2500, 5000]
+        # Установили адекватные суммы для пополнения
+        amount_list = [
+            100,
+            250,
+            500,
+            1000,
+            2500,
+            5000,
+        ]
         for amount in amount_list:
             free = int(
                 0
@@ -43,22 +51,23 @@ class SelectPayAmount(InlineKeyboardBuilder):
             self.button(
                 text=f"{amount:,} руб."
                 if not free
-                else f"{amount:,} руб. (+{free:,} bonus)",
+                else f"{amount:,} руб. (+{free:,} 🔥)",
                 callback_data=self.Callback(amount=amount, free=free, method=method),
             )
-        self.button(text="Своя сумма", callback_data=self.Callback(amount=0, method=method))
-        self.button(text="Назад", callback_data=UserPanel.Callback(action=UserPanelAction.charge))
+        
+        self.button(
+            text="✍️ Своя сумма",
+            callback_data=self.Callback(amount=0, method=method),
+        )
+
+        self.button(
+            text="🔙 Назад",
+            callback_data=UserPanel.Callback(action=UserPanelAction.charge),
+        )
         self.adjust(2, 2, 2, 1, 1)
 
 
-class PayYooUrl(InlineKeyboardBuilder):
-    def __init__(self, url: str, inv_id: int = None, *args, **kwargs) -> None:
+class PayRoboUrl(InlineKeyboardBuilder):
+    def __init__(self, url: str, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        self.button(text="Оплатить", url=url)
-        if inv_id:
-            self.button(text="Проверить статус / Повторить", callback_data=f"check_yoo_payment:{inv_id}")
-        self.button(
-            text="К суммам",
-            callback_data=SelectPayAmount.Callback(amount=0, method=ChargeMethods.yookassa),
-        )
-        self.adjust(1, 1)
+        self.button(text="💳 Оплатить счет", url=url)

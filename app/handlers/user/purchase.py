@@ -74,8 +74,8 @@ async def show_service(
 
     price = service.get_price()
     # Прямой вывод без кривых хелперов
-    duration = f"{service.expire_duration} дней" if service.expire_duration else "Безлимит"
-    size = f"{service.data_limit} ГБ" if service.data_limit else "Безлимит"
+    duration = helpers.hr_time(service.expire_duration, lang="ru") if service.expire_duration else "Безлимит"
+    size = helpers.hr_size(service.data_limit, lang="ru") if service.data_limit else "Безлимит"
     
     text = f"""
 💎 <b>{service.name}</b>
